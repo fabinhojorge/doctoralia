@@ -45,8 +45,10 @@ def has_next_pagination(_soup, current_pagination, max_pagination=-1):
 def create_doctor(_soup):
     """Helper function to extract information from soup and create the Doctor object"""
 
-    name_select = _soup.select("div.unified-doctor-header-info div.unified-doctor-header-info__name span")[:2]
-    name = " ".join(map(lambda x: x.text, name_select))
+    # name_select = _soup.select("div.unified-doctor-header-info div.unified-doctor-header-info__name span")[:2]
+    name_select = _soup.select_one("div.unified-doctor-header-info div.unified-doctor-header-info__name")\
+        .find(itemprop="name")
+    name = name_select.text
 
     image_select = _soup.select("div.unified-doctor-header-info a.avatar")
     image_link = image_select[0]["href"] if len(image_select) > 0 else ""
@@ -60,11 +62,17 @@ def create_doctor(_soup):
     else:
         experiences = ""
 
+    city = _soup.select_one("div.calendar-address").select_one("span.city")['content']
+    state = _soup.select_one("div.calendar-address").select_one("span.region")['content']
+    address = _soup.select_one("div.calendar-address").select_one("span.street").text
+    telephone_select = soup.select_one("div.calendar-address div.modal i.svg-icon__phone")
+    if telephone_select is not None:
+        telephone = telephone_select.parent.find("b").text.strip()
+    else:
+        telephone = ""
 
-    # address
-    # telephone
-
-    _doctor = Doctor(name, image_link, specialization, experiences)
+    _doctor = Doctor(name=name, image_link=image_link, specialization=specialization, experiences=experiences,
+                     city=city, state=state, address=address, telephone=telephone)
 
     print(_doctor)
 
@@ -80,7 +88,7 @@ soup = get_soup_page(driver, init_url)
 
 specialization_list = soup.select("div section div h3 div a.text-muted")
 
-for spe in specialization_list[5:7]:
+for spe in specialization_list[15:17]:
     pagination = 0
     while True:
         pagination += 1
