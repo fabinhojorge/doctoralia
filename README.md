@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 ## How to use
 ```
-python DoctorinaWebCrawler.py
+python DoctoraliaWebCrawler.py
 ```
 
 
