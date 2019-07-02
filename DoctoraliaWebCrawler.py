@@ -10,10 +10,15 @@ Description: Web Crawler to extract information from Doctoralia site
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
+import datetime
+import csv
 from Doctor import Doctor
 
 
 BASE_DOMAIN = "https://www.doctoralia.com.br"
+DOCTOR_LIST_THRESHOLD = 20
+SPECIALIZATION_LIST_THRESHOLD = 20
+MAX_PAGINATION = 3
 
 
 def init_webdriver_config(impl_delay=30):
@@ -29,8 +34,8 @@ def init_webdriver_config(impl_delay=30):
 
 def get_soup_page(_driver, url):
     """Helper function that navigates and returns an BeautifulSoup page"""
-    time.sleep(1)
     _driver.get(url)
+    time.sleep(2)
     return BeautifulSoup(driver.page_source, 'html.parser')
 
 
@@ -62,9 +67,18 @@ def create_doctor(_soup):
     else:
         experiences = ""
 
-    city = _soup.select_one("div.calendar-address").select_one("span.city")['content']
-    state = _soup.select_one("div.calendar-address").select_one("span.region")['content']
-    address = _soup.select_one("div.calendar-address").select_one("span.street").text
+    address_select = _soup.select_one("div.calendar-address")
+    if address_select is not None:
+        city_select = address_select.select_one("span.city")
+        city = city_select['content'] if city_select is not None else ""
+        state_select = address_select.select_one("span.region")
+        state = state_select['content'] if state_select is not None else ""
+        address_select = address_select.select_one("span.street")
+        address = address_select.text if address_select is not None else ""
+    else:
+        city = ""
+        state = ""
+        address = ""
     telephone_select = soup.select_one("div.calendar-address div.modal i.svg-icon__phone")
     if telephone_select is not None:
         telephone = telephone_select.parent.find("b").text.strip()
@@ -83,32 +97,48 @@ def create_doctor(_soup):
 
 driver = init_webdriver_config(30)
 
+doctors = []
+
 init_url = "{0}/{1}".format(BASE_DOMAIN, 'especializacoes-medicas')
 soup = get_soup_page(driver, init_url)
 
 specialization_list = soup.select("div section div h3 div a.text-muted")
 
-for spe in specialization_list[15:17]:
-    pagination = 0
+for spe in specialization_list[:SPECIALIZATION_LIST_THRESHOLD]:
+    page = 0
     while True:
-        pagination += 1
-        next_url = "{0}{1}/{2}".format(BASE_DOMAIN, spe["href"], pagination)
+        page += 1
+        next_url = "{0}{1}/{2}".format(BASE_DOMAIN, spe["href"], page)
         soup = get_soup_page(driver, next_url)
 
-        check_next_pagination = has_next_pagination(soup, pagination, max_pagination=2)
+        check_next_pagination = has_next_pagination(soup, page, max_pagination=MAX_PAGINATION)
         doctor_list_per_pagination = soup.select("a.rank-element-name__link")
 
         # get doctor list per page
-        for doctor_page in doctor_list_per_pagination[:2]:
+        for doctor_page in doctor_list_per_pagination[:DOCTOR_LIST_THRESHOLD]:
             url_doctor = doctor_page['href']
             soup = get_soup_page(driver, url_doctor)
 
-            doctor = create_doctor(soup)
+            try:
+                doctor = create_doctor(soup)
+                doctors.append(doctor)
+            except Exception as err:
+                print("Failed to extract doctor due to {0}".format(err))
 
         # has_next_pagination
         if not check_next_pagination:
             break
 
-# driver.quit()
+
+file_name = "{0}_{1}.csv".format('doctoralia_extract', datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
+with open(file_name, 'w', newline='') as f:
+    writer = csv.writer(f)
+
+    writer.writerow(Doctor.CSV_HEADER)
+
+    for doc in doctors:
+        writer.writerow(doc.to_csv())
+
+driver.quit()
 
 print(">> WebCrawler Finished <<")

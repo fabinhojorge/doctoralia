@@ -2,6 +2,8 @@
 
 class Doctor:
 
+    CSV_HEADER = ['Doctor Name', 'Specialization', 'Experiences', 'Telephone', 'City', 'State', 'Address', 'Image link']
+
     def __init__(self, name, image_link, specialization, experiences, city, state, address, telephone):
         self._name = name
         self._image_link = image_link
@@ -91,6 +93,10 @@ class Doctor:
         self._telephone = telephone.strip()
 
     telephone = property(get_telephone, set_telephone)
+
+    def to_csv(self):
+        #return "{0},{1},{2},{3},{4},{5},{6},{7}".format(self.name, self.specialization, self.experience, self.telephone, self.city, self.state, self.address, self.image_link)
+        return [self.name, self.specialization, self.experience, self.telephone, self.city, self.state, self.address, self.image_link]
 
     def __str__(self):
         return "Doctor: [{0}], Especializations: [{1}], Experience: [{2}], Telephone: [{3}], Address: [{4}][{5}][{6}]"\

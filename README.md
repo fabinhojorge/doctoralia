@@ -6,10 +6,12 @@ It is a web Crawler and Scraper to extract data from doctolaria site.
 The informations collected are:
 - Name
 - Image_link
-- Address
-- Address_telephone
 - Specializations
 - Experiences
+- City
+- State
+- Address
+- Address_telephone
 
 
 ## How to install and Run
