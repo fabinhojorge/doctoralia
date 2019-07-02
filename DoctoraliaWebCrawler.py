@@ -16,9 +16,11 @@ from Doctor import Doctor
 
 
 BASE_DOMAIN = "https://www.doctoralia.com.br"
-DOCTOR_LIST_THRESHOLD = 20
-SPECIALIZATION_LIST_THRESHOLD = 20
-MAX_PAGINATION = 3
+
+# Variables to help to control the application.
+DOCTOR_LIST_THRESHOLD = 999
+SPECIALIZATION_LIST_THRESHOLD = 999
+MAX_PAGINATION = -1  # -1 means unlimited
 
 
 def init_webdriver_config(impl_delay=30):
